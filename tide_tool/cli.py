@@ -144,12 +144,24 @@ def cmd_window(args):
     print()
 
     if not windows:
-        print("⚠️  无安全窗口！")
-        print("   可能原因：")
-        print("   - 潮高普遍高于阈值")
-        print("   - 涨潮速度过快")
-        print("   - 可赶海时间恰好在天黑后")
+        print("[!] 无安全窗口！")
+        print("    可能原因：")
+        print("    - 潮高普遍高于阈值")
+        print("    - 涨潮速度过快")
+        print("    - 可赶海时间恰好在天黑后")
         print()
+
+        if points:
+            all_reasons = set()
+            for p in points:
+                for r in p.reasons:
+                    all_reasons.add(r)
+            if all_reasons:
+                from .window import describe_danger_reason
+                print("    详细限制因素：")
+                for r in sorted(all_reasons):
+                    print(f"      - {describe_danger_reason(r)}")
+                print()
     else:
         print(f"找到 {len(windows)} 个安全窗口：")
         print()

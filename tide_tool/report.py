@@ -183,10 +183,51 @@ def export_markdown_report(
     if not windows:
         lines.append("**无安全窗口！** 请降低阈值或改日赶海。")
         lines.append("")
-        lines.append("原因分析：")
-        lines.append("- 所有时间点均不满足安全条件")
-        lines.append("- 可能原因：潮高普遍高于阈值、涨潮过快、或可赶海时间恰好在天黑后")
+        lines.append("### 原因分析")
         lines.append("")
+
+        if points:
+            reason_counts = {}
+            min_h = float("inf")
+            max_rate = -float("inf")
+            for p in points:
+                for r in p.reasons:
+                    reason_counts[r] = reason_counts.get(r, 0) + 1
+                if p.height < min_h:
+                    min_h = p.height
+                if p.rate > max_rate:
+                    max_rate = p.rate
+
+            lines.append(f"- 分析时间段内最低潮：**{min_h:.3f} m**")
+            lines.append(f"- 分析时间段内最大涨潮速度：**{max_rate:.3f} m/h**")
+            lines.append("")
+
+            if reason_counts:
+                lines.append("#### 限制因素统计")
+                lines.append("")
+                lines.append("| 限制因素 | 出现点数 | 说明 |")
+                lines.append("|----------|----------|------|")
+                total = len(points)
+                for r, cnt in sorted(reason_counts.items(), key=lambda x: -x[1]):
+                    desc = describe_danger_reason(r)
+                    pct = cnt * 100.0 / total if total > 0 else 0
+                    lines.append(f"| {desc} | {cnt} ({pct:.0f}%) | {r} |")
+                lines.append("")
+
+            lines.append("### 建议调整")
+            lines.append("")
+            if "height_too_high" in reason_counts:
+                lines.append(f"- 潮高阈值建议：当前 {config.height_threshold:.2f} m，最低潮 {min_h:.2f} m，可适当提高阈值")
+            if "flood_too_fast" in reason_counts:
+                lines.append(f"- 涨潮速度建议：当前上限 {config.max_flood_rate:.3f} m/h，最大涨速 {max_rate:.3f} m/h")
+            if "return_not_safe" in reason_counts:
+                lines.append(f"- 返回距离建议：当前离岸 {config.offshore_distance_km:.1f} km / 速度 {config.walking_speed_kmh:.1f} km/h，可缩短离岸距离")
+            if "darkness" in reason_counts:
+                lines.append("- 时间建议：可考虑日出日落限制，选择白天低潮时段")
+            lines.append("")
+        else:
+            lines.append("- 无分析数据点")
+            lines.append("")
     else:
         lines.append(f"共找到 **{len(windows)}** 个安全窗口：")
         lines.append("")
@@ -251,7 +292,7 @@ def export_markdown_report(
         lines.append("")
 
         if fit_result.warnings:
-            lines.append("### ⚠️ 警告")
+            lines.append("### 警告")
             lines.append("")
             for w in fit_result.warnings:
                 lines.append(f"- {w}")

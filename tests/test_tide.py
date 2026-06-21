@@ -560,6 +560,11 @@ class TestReport(unittest.TestCase):
         )
 
         self.assertIn("无安全窗口", md)
+        self.assertIn("原因分析", md)
+        self.assertIn("限制因素统计", md)
+        self.assertIn("建议调整", md)
+        self.assertIn("height_too_high", md)
+        self.assertIn("最低潮", md)
 
     def test_fit_csv(self):
         model = TideModel(
